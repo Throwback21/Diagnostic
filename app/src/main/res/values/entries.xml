@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="spisok" >
+        <item> Устройство 1 </item>
+        <item> Устройство 2 </item>
+        <item> Устройство 3 </item>
+        <item> Устройство 4 </item>
+        <item> Устройство 5 </item>
+        <item> Устройство 6 </item>
+        <item> Устройство 7 </item>
+        <item> Устройство 8 </item>
+        <item> Устройство 9 </item>
+        <item> Устройство 10 </item>
+        <item> Устройство 11 </item>
+        <item> Устройство 12 </item>
+        <item> Устройство 13 </item>
+        <item> Устройство 14 </item>
+        <item> Устройство 15 </item>
+    </string-array>
+</resources>
