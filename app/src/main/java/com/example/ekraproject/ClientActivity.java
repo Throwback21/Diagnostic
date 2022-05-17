@@ -1,8 +1,5 @@
 package com.example.ekraproject;
 
-import static android.content.ContentValues.TAG;
-
-import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -14,8 +11,6 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
-import android.bluetooth.BluetoothGattCharacteristic;
-import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
@@ -24,7 +19,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
-import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -33,16 +27,10 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 
-import java.net.DatagramSocket;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 
 import android.bluetooth.le.*;
 import android.widget.Toast;
@@ -58,7 +46,6 @@ public class ClientActivity extends AppCompatActivity {
     private static final long SCAN_PERIOD = 10000;
     private BluetoothLeScanner mLEScanner;
     private ScanSettings settings;
-    private List<ScanFilter> filters;
     private BluetoothGatt mGatt;
     ArrayAdapter<String> adapter;
 
@@ -69,8 +56,9 @@ public class ClientActivity extends AppCompatActivity {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
         }
+    }
 
-    }public boolean checkLocationPermission() {
+    public boolean checkLocationPermission() {
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission. ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -104,8 +92,6 @@ public class ClientActivity extends AppCompatActivity {
         }
     }
 
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         /**     поля        */
@@ -125,14 +111,8 @@ public class ClientActivity extends AppCompatActivity {
         settings = new ScanSettings.Builder()
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
                 .build();
-
-
-        filters = new ArrayList<ScanFilter>();
-        checkBluetooth();
         checkLocationPermission();
 
-
-        /**     onClick     */
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -144,13 +124,24 @@ public class ClientActivity extends AppCompatActivity {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                String nameDevice= devises.get(position);
-                BluetoothDevice device=mBluetoothAdapter.getRemoteDevice(nameDevice);
+                String str=devises.get(position);
+                String addressDevice;
+                String nameDevice;
+                if (str.contains(" ")){
+                     addressDevice=str.substring(0, str.indexOf(" "));
+                     nameDevice=str.substring(str.indexOf(" "));
+                     nameDevice=nameDevice.trim();
+                } else {
+                    addressDevice=str;
+                    nameDevice=str;
+                }
+                BluetoothDevice device=mBluetoothAdapter.getRemoteDevice(addressDevice);
                 Toast.makeText(getBaseContext(), nameDevice, Toast.LENGTH_SHORT).show();
                 connectToDevice(device);
                 Intent intent=new Intent(ClientActivity.this, KSActivity.class);
                 intent.putExtra("nameDevice", nameDevice);
                 startActivity(intent);
+
             }
         });
     }
@@ -159,7 +150,6 @@ public class ClientActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_ENABLE_BT) {
             if (resultCode == Activity.RESULT_CANCELED) {
-                //Bluetooth not enabled.
                 finish();
                 return;
             }
@@ -183,8 +173,6 @@ public class ClientActivity extends AppCompatActivity {
         } else {
             if (Build.VERSION.SDK_INT >= 21) {
                 mBluetoothAdapter.stopLeScan(mLeScanCallback);
-            } else {
-                mLEScanner.stopScan(mScanCallback);
             }
         }
         adapter.notifyDataSetInvalidated();
@@ -223,9 +211,12 @@ public class ClientActivity extends AppCompatActivity {
                         @Override
                         public void run() {
                             Log.i("onLeScan", device.toString());
-                            String address = device.getAddress();
-                            if (!devises.contains(address)) {
-                                devises.add(address);
+                                if (device.getName()!=null){
+                                    if (!devises.contains(device.getAddress()+" \n"+device.getName())) {
+                                        devises.add(device.getAddress() + " \n"+device.getName());
+                                    }
+                                } else if (!devises.contains(device.getAddress())) {
+                                    devises.add(device.getAddress());
                             }
                             adapter.notifyDataSetChanged();
                         }
@@ -255,20 +246,6 @@ public class ClientActivity extends AppCompatActivity {
                 default:
                     Log.e("gattCallback", "STATE_OTHER");
             }
-        }
-        @Override
-        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-            List<BluetoothGattService> services = gatt.getServices();
-            Log.i("onServicesDiscovered", services.toString());
-            gatt.readCharacteristic(services.get(1).getCharacteristics().get(0));
-        }
-
-        @Override
-        public void onCharacteristicRead(BluetoothGatt gatt,
-                                         BluetoothGattCharacteristic
-                                                 characteristic, int status) {
-            Log.i("onCharacteristicRead", characteristic.toString());
-            gatt.disconnect();
         }
     };
 
