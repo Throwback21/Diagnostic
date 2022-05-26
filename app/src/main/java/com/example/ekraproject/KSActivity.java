@@ -1,6 +1,7 @@
 package com.example.ekraproject;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.utils.widget.ImageFilterButton;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -19,12 +20,15 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.ParcelUuid;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
@@ -32,21 +36,28 @@ import java.util.UUID;
 
 public class KSActivity extends AppCompatActivity {
     private Button button;
+    private ImageFilterButton update;
     private TextView nameDevice, iSet, condition;
     private EditText maxVal, showAdd;
     private BluetoothAdapter mBluetoothAdapter;
-    private Handler mHandler;
     private BluetoothGatt mGatt;
+    private UUID SERVICE_UUID = UUID.fromString("795090c7-420d-4048-a24e-18e60180e23c");
+    private UUID CHARACTERISTIC_COUNTER_UUID = UUID.fromString("31517c58-66bf-470c-b662-e352a6c80cba");
+    private UUID CHARACTERISTIC_INTERACTOR_UUID = UUID.fromString("0b89d2d4-0ea6-4141-86bb-0c5fb91ab14a");
+    private UUID DESCRIPTOR_CONFIG_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
+
+    int adView=1;
+    int maxValue=1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getSupportActionBar().setBackgroundDrawable(new ColorDrawable
-                (Color.rgb(0, 154, 132)));
+        getSupportActionBar().setBackgroundDrawable(new ColorDrawable(Color.rgb(0, 154, 132)));
         getSupportActionBar().setTitle("Клиент");
         setContentView(R.layout.activity_ksactivity);
         button = findViewById(R.id.button2);
         nameDevice = findViewById(R.id.nameDevice);
+        update = findViewById(R.id.update);
         iSet = findViewById(R.id.condition);
         maxVal = findViewById(R.id.editText);
         condition = findViewById(R.id.condition);
@@ -59,17 +70,119 @@ public class KSActivity extends AppCompatActivity {
         mBluetoothAdapter = bluetoothManager.getAdapter();
         condition.setText("Состояние");
         button.setBackgroundColor(Color.WHITE);
+
         BluetoothDevice device=mBluetoothAdapter.getRemoteDevice(deviceName);
+        Toast.makeText(getBaseContext(), deviceName, Toast.LENGTH_SHORT).show();
+        mGatt = device.connectGatt(this, false, gattCallback);
 
 
+        if (!(maxVal.getText().toString()).equals("")) {
+            maxValue = Integer.parseInt(maxVal.getText().toString());
+        }
+        if (!(showAdd.getText().toString()).equals("")) {
+            adView = Integer.parseInt(showAdd.getText().toString());
+        }
+
+
+        update.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mGatt.close();
+                mGatt = device.connectGatt(getBaseContext(), false, gattCallback);
+            }
+        });
     }
 
     private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
 
+
+        @Override
+        public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+            if (newState == BluetoothProfile.STATE_CONNECTED) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(KSActivity.this, "Success", Toast.LENGTH_SHORT).show();
+                    }
+                });
+                Log.i("TAG", "Connected to GATT client. Attempting to start service discovery");
+                gatt.discoverServices();
+                readCounterCharacteristic(gatt.getService((SERVICE_UUID)).getCharacteristic(CHARACTERISTIC_COUNTER_UUID));
+            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                Log.i("TAG", "Disconnected from GATT client");
+            }
+        }
+
+        @Override
+        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+            if (status != BluetoothGatt.GATT_SUCCESS) {
+                return;
+            }
+
+            BluetoothGattCharacteristic characteristic = gatt
+                    .getService(SERVICE_UUID)
+                    .getCharacteristic(CHARACTERISTIC_COUNTER_UUID);
+
+            gatt.setCharacteristicNotification(characteristic, true);
+
+            BluetoothGattDescriptor descriptor =
+                    characteristic.getDescriptor(DESCRIPTOR_CONFIG_UUID);
+            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+            gatt.writeDescriptor(descriptor);
+        }
+
+        @Override
+        public void onDescriptorWrite(BluetoothGatt gatt,
+                                      BluetoothGattDescriptor descriptor, int status) {
+            if (DESCRIPTOR_CONFIG_UUID.equals(descriptor.getUuid())) {
+                BluetoothGattCharacteristic characteristic = gatt
+                        .getService(SERVICE_UUID)
+                        .getCharacteristic(CHARACTERISTIC_COUNTER_UUID);
+                gatt.readCharacteristic(characteristic);
+            }
+        }
+
+        @Override
+        public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+            BluetoothGattService syncService = gatt.getService(SERVICE_UUID);
+            BluetoothGattCharacteristic tChar = syncService.getCharacteristic(CHARACTERISTIC_COUNTER_UUID);
+            if (tChar == null) throw new AssertionError("characteristic null when sync time!");
+
+            byte[] bytes = {(byte) 1};
+            tChar.setValue(bytes);
+            gatt.writeCharacteristic(tChar);
+        }
+
+
+        @Override
+        public void onCharacteristicRead(BluetoothGatt gatt,
+                                         BluetoothGattCharacteristic characteristic, int status) {
+            readCounterCharacteristic(characteristic);
+        }
+
+        private void readCounterCharacteristic(BluetoothGattCharacteristic
+                                                       characteristic) {
+            if (CHARACTERISTIC_COUNTER_UUID.equals(characteristic.getUuid())) {
+                byte[] data = characteristic.getValue();
+
+                BigInteger value = new BigInteger(data);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        iSet.setText("U = " +value.toString()+ " В");
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void onCharacteristicChanged(BluetoothGatt gatt,
+                                            BluetoothGattCharacteristic characteristic) {
+            readCounterCharacteristic(characteristic);
+        }
+
+
+
     };
 
-    public List<BluetoothGattService> getSupportedGattServices() {
-        if (mGatt == null) return null;
-        return mGatt.getServices();
-    }
 }

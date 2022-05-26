@@ -45,13 +45,16 @@ public class ClientActivity extends AppCompatActivity {
     private Handler mHandler;
     private static final long SCAN_PERIOD = 10000;
     private BluetoothLeScanner mLEScanner;
-    private ScanSettings settings;
     private BluetoothGatt mGatt;
     ArrayAdapter<String> adapter;
 
     ArrayList<String> devises = new ArrayList<>();
 
     private void checkBluetooth() {
+        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
+            Toast.makeText(this, "BLE not supported", Toast.LENGTH_SHORT).show();
+            finish();
+        }
         if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
@@ -65,7 +68,6 @@ public class ClientActivity extends AppCompatActivity {
 
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                     Manifest.permission. ACCESS_FINE_LOCATION)) {
-                //показываем диалог
                 new AlertDialog.Builder(this)
                         .setTitle("aaa")
                         .setMessage("bbb")
@@ -88,6 +90,7 @@ public class ClientActivity extends AppCompatActivity {
             }
             return false;
         } else {
+//            startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
             return true;
         }
     }
@@ -108,9 +111,6 @@ public class ClientActivity extends AppCompatActivity {
                 (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
         mLEScanner = mBluetoothAdapter.getBluetoothLeScanner();
-        settings = new ScanSettings.Builder()
-                .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
-                .build();
         checkLocationPermission();
 
         button.setOnClickListener(new View.OnClickListener() {
@@ -135,12 +135,11 @@ public class ClientActivity extends AppCompatActivity {
                     addressDevice=str;
                     nameDevice=str;
                 }
-                BluetoothDevice device=mBluetoothAdapter.getRemoteDevice(addressDevice);
-                Toast.makeText(getBaseContext(), nameDevice, Toast.LENGTH_SHORT).show();
-                connectToDevice(device);
+
                 Intent intent=new Intent(ClientActivity.this, KSActivity.class);
-                intent.putExtra("nameDevice", nameDevice);
+                intent.putExtra("nameDevice", addressDevice);
                 startActivity(intent);
+                scanLeDevice(false);
 
             }
         });
@@ -254,6 +253,7 @@ public class ClientActivity extends AppCompatActivity {
         super.onPause();
         if (mBluetoothAdapter != null && mBluetoothAdapter.isEnabled()) {
             scanLeDevice(false);
+            devises.clear();
         }
     }
 
@@ -264,6 +264,7 @@ public class ClientActivity extends AppCompatActivity {
         }
         mGatt.close();
         mGatt = null;
+        devises.clear();
         super.onDestroy();
     }
 }
