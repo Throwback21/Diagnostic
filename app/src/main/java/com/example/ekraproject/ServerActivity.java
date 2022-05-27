@@ -83,7 +83,7 @@ public class ServerActivity extends AppCompatActivity {
     private BluetoothGatt mGatt;
 
     int conditionValue=0;
-    int currentCounterValue = 1;
+    int currentCounterValue = 0;
 
 
     BluetoothGattServer mGattServer;
@@ -106,7 +106,6 @@ public class ServerActivity extends AppCompatActivity {
         vvod.setBackgroundColor(Color.rgb(0, 154, 132));
         vvod.setTextColor(Color.WHITE);
 
-        //timeAd(1);
 
         BluetoothLeAdvertiser mBluetoothLeAdvertiser = mBluetoothAdapter.getBluetoothLeAdvertiser();
         mBluetoothLeAdvertiser.startAdvertising(settings, data, mAdvertiseCallback);
@@ -123,6 +122,10 @@ public class ServerActivity extends AppCompatActivity {
                 }
                 if (!(tok.getText().toString()).equals("")) {
                     currentCounterValue = Integer.parseInt(tok.getText().toString());
+                    String s= String.valueOf(conditionValue);
+                    String d=String.valueOf(currentCounterValue);
+                    s+=d;
+                    currentCounterValue=Integer.parseInt(s);
                 }
 
 

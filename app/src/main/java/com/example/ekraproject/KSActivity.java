@@ -49,6 +49,8 @@ public class KSActivity extends AppCompatActivity {
     int adView=1;
     int maxValue=1;
 
+    int indicat=0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,7 +71,6 @@ public class KSActivity extends AppCompatActivity {
                 (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
         condition.setText("Состояние");
-        button.setBackgroundColor(Color.WHITE);
 
         BluetoothDevice device=mBluetoothAdapter.getRemoteDevice(deviceName);
         Toast.makeText(getBaseContext(), deviceName, Toast.LENGTH_SHORT).show();
@@ -164,12 +165,24 @@ public class KSActivity extends AppCompatActivity {
                                                        characteristic) {
             if (CHARACTERISTIC_COUNTER_UUID.equals(characteristic.getUuid())) {
                 byte[] data = characteristic.getValue();
-
                 BigInteger value = new BigInteger(data);
+                String s= value.toString();
+                int cond=Integer.parseInt(s.substring(0, 1));
+                int val=Integer.parseInt(s.substring(1, s.length()));
+
+
+
+
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        iSet.setText("U = " +value.toString()+ " В");
+                        iSet.setText("U = " +val+ " В");
+                        if (cond==1){
+                            button.setBackgroundColor(Color.RED);
+                        } else if (cond==0){
+                            button.setBackgroundColor(Color.GREEN);
+                        }
+
                     }
                 });
             }

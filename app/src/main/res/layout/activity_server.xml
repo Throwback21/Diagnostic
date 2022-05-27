@@ -19,7 +19,7 @@
 
     <LinearLayout
         android:id="@+id/linearLayout"
-        android:layout_width="354dp"
+        android:layout_width="370dp"
         android:layout_height="251dp"
         android:layout_marginTop="40dp"
         android:orientation="vertical"
@@ -55,18 +55,18 @@
 
     <LinearLayout
         android:id="@+id/linearLayout2"
-        android:layout_width="300dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="40dp"
+        android:layout_width="357dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="80dp"
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.494"
+        app:layout_constraintHorizontal_bias="0.493"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/indicat">
 
         <EditText
             android:id="@+id/tok"
-            android:layout_width="182dp"
+            android:layout_width="wrap_content"
             android:layout_height="50dp"
             android:layout_marginStart="16dp"
             android:ems="10"
@@ -76,7 +76,7 @@
         <Button
             android:id="@+id/vvod"
             style="@style/Widget.MaterialComponents.ExtendedFloatingActionButton.Icon"
-            android:layout_width="100dp"
+            android:layout_width="109dp"
             android:layout_height="50dp"
             android:text="Ввести" />
     </LinearLayout>
