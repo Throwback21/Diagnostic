@@ -39,7 +39,7 @@
 
     <EditText
         android:id="@+id/editText"
-        android:layout_width="300dp"
+        android:layout_width="wrap_content"
         android:layout_height="60dp"
         android:layout_marginTop="70dp"
         android:ems="10"
@@ -52,11 +52,11 @@
 
     <EditText
         android:id="@+id/showAdd"
-        android:layout_width="350dp"
+        android:layout_width="wrap_content"
         android:layout_height="60dp"
         android:layout_marginTop="70dp"
         android:ems="10"
-        android:hint="Интервал рекламирования"
+        android:hint="Время до рекламы"
         android:inputType="textPersonName"
         android:textSize="26sp"
         app:layout_constraintEnd_toEndOf="parent"

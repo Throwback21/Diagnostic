@@ -1,5 +1,11 @@
 package com.example.ekraproject;
 
+import static android.bluetooth.BluetoothGattCharacteristic.PERMISSION_READ;
+import static android.bluetooth.BluetoothGattCharacteristic.PROPERTY_NOTIFY;
+import static android.bluetooth.BluetoothGattCharacteristic.PROPERTY_READ;
+import static android.bluetooth.BluetoothGattCharacteristic.PROPERTY_WRITE;
+import static android.bluetooth.BluetoothGattDescriptor.PERMISSION_WRITE;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.utils.widget.ImageFilterButton;
 
@@ -76,10 +82,6 @@ public class KSActivity extends AppCompatActivity {
         Toast.makeText(getBaseContext(), deviceName, Toast.LENGTH_SHORT).show();
         mGatt = device.connectGatt(this, false, gattCallback);
 
-
-        if (!(maxVal.getText().toString()).equals("")) {
-            maxValue = Integer.parseInt(maxVal.getText().toString());
-        }
         if (!(showAdd.getText().toString()).equals("")) {
             adView = Integer.parseInt(showAdd.getText().toString());
         }
@@ -90,9 +92,31 @@ public class KSActivity extends AppCompatActivity {
             public void onClick(View v) {
                 mGatt.close();
                 mGatt = device.connectGatt(getBaseContext(), false, gattCallback);
+                if (!(maxVal.getText().toString()).equals("")){
+                        int val = Integer.parseInt(maxVal.getText().toString());
+                    byte[] value=BigInteger.valueOf(val).toByteArray();
+                    BluetoothGattCharacteristic characteristic=mGatt.getService((SERVICE_UUID))
+                            .getCharacteristic(CHARACTERISTIC_INTERACTOR_UUID);
+                    characteristic.setValue(value);
+                    mGatt.writeCharacteristic();
+                }
+
             }
         });
     }
+
+
+
+    public  void writeInteractorCharacteristic(int value){
+        BluetoothGattCharacteristic characteristic= mGatt.getService
+                (SERVICE_UUID).getCharacteristic(CHARACTERISTIC_INTERACTOR_UUID);
+        byte[] val=BigInteger.valueOf(value).toByteArray();
+        characteristic.setValue(val);
+        mGatt.writeCharacteristic(characteristic);
+    }
+
+
+
 
     private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
 
@@ -143,16 +167,6 @@ public class KSActivity extends AppCompatActivity {
             }
         }
 
-        @Override
-        public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-            BluetoothGattService syncService = gatt.getService(SERVICE_UUID);
-            BluetoothGattCharacteristic tChar = syncService.getCharacteristic(CHARACTERISTIC_COUNTER_UUID);
-            if (tChar == null) throw new AssertionError("characteristic null when sync time!");
-
-            byte[] bytes = {(byte) 1};
-            tChar.setValue(bytes);
-            gatt.writeCharacteristic(tChar);
-        }
 
 
         @Override
@@ -167,11 +181,8 @@ public class KSActivity extends AppCompatActivity {
                 byte[] data = characteristic.getValue();
                 BigInteger value = new BigInteger(data);
                 String s= value.toString();
-                int cond=Integer.parseInt(s.substring(0, 1));
-                int val=Integer.parseInt(s.substring(1, s.length()));
-
-
-
+                int cond=Integer.parseInt(s.substring(s.length()-1, s.length()));
+                int val=Integer.parseInt(s.substring(0, s.length()-1));
 
                 runOnUiThread(new Runnable() {
                     @Override
@@ -179,7 +190,8 @@ public class KSActivity extends AppCompatActivity {
                         iSet.setText("U = " +val+ " В");
                         if (cond==1){
                             button.setBackgroundColor(Color.RED);
-                        } else if (cond==0){
+                        }
+                        if (cond==0){
                             button.setBackgroundColor(Color.GREEN);
                         }
 
@@ -193,9 +205,6 @@ public class KSActivity extends AppCompatActivity {
                                             BluetoothGattCharacteristic characteristic) {
             readCounterCharacteristic(characteristic);
         }
-
-
-
     };
 
 }

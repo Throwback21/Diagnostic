@@ -85,7 +85,10 @@ public class ServerActivity extends AppCompatActivity {
     int conditionValue=0;
     int currentCounterValue = 0;
 
-
+    String sostT="Состояние индикации = ";
+    String iT="Ток в линии  = ";
+    String isetT="Допустимый ток = ";
+    String tconnT="Интервал рекламы = ";
     BluetoothGattServer mGattServer;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,6 +110,11 @@ public class ServerActivity extends AppCompatActivity {
         vvod.setTextColor(Color.WHITE);
 
 
+        sost.setText(sostT+0);
+        i.setText(iT+0);
+        iset.setText(isetT+0);
+        tconn.setText(tconnT+0+" мин.");
+
         BluetoothLeAdvertiser mBluetoothLeAdvertiser = mBluetoothAdapter.getBluetoothLeAdvertiser();
         mBluetoothLeAdvertiser.startAdvertising(settings, data, mAdvertiseCallback);
         BluetoothManager mBluetoothManager=(BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);;
@@ -120,20 +128,21 @@ public class ServerActivity extends AppCompatActivity {
                 if (indicat.isChecked()) {
                     conditionValue=1;
                 }
+                if (!indicat.isChecked()){
+                    conditionValue=0;
+                }
                 if (!(tok.getText().toString()).equals("")) {
                     currentCounterValue = Integer.parseInt(tok.getText().toString());
-                    String s= String.valueOf(conditionValue);
-                    String d=String.valueOf(currentCounterValue);
+                    String d= String.valueOf(conditionValue);
+                    String s=String.valueOf(currentCounterValue);
                     s+=d;
                     currentCounterValue=Integer.parseInt(s);
-                }
+                } else currentCounterValue=1;
 
 
                 notifyRegisteredDevices();
-                sost.setText("Состояние индикации = "+ conditionValue);
-                i.setText("Напряжение в линии  = " + tok.getText().toString());
-                iset.setText("Допустимое напряжение = " +"27000");
-                tconn.setText("Интервал рекламы = "+ 5+ " мин.");
+                sost.setText(sostT+ conditionValue);
+                i.setText(iT + tok.getText().toString());
 
             }
         });
@@ -143,11 +152,11 @@ public class ServerActivity extends AppCompatActivity {
 
     AdvertiseSettings settings = new AdvertiseSettings.Builder()
             .setConnectable(true)
+            .setTimeout(0)
             .build();
 
     AdvertiseData data = new AdvertiseData.Builder()
             .setIncludeDeviceName(true)
-//            .setIncludeTxPowerLevel(true)
             .build();
 
     AdvertiseCallback mAdvertiseCallback = new AdvertiseCallback() {
@@ -185,7 +194,7 @@ public class ServerActivity extends AppCompatActivity {
                     Log.i("TAG", "Read counter");
                     Log.i("TAG", String.valueOf(currentCounterValue));
                     mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, value);
-            } else{
+            } else {
                 Log.w("TAG", "Invalid Characteristic Read: " + characteristic.getUuid());
                 mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_FAILURE, 0, null);
             }
@@ -197,6 +206,12 @@ public class ServerActivity extends AppCompatActivity {
                                                  boolean preparedWrite, boolean responseNeeded, int offset, byte[] value) {
             if (CHARACTERISTIC_INTERACTOR_UUID.equals(characteristic.getUuid())) {
                 BigInteger ad=new BigInteger(value);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        iset.setText(isetT+ad+"");
+                    }
+                });
                 Log.i("TAG", characteristic.getValue()+" ");
 
             }
